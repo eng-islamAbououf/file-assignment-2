@@ -1,0 +1,3 @@
+"C:\Program Files\JetBrains\CLion 2021.1.1\bin\cmake\win\bin\cmake.exe" -E rm -f CMakeFiles\fileLab.dir/objects.a
+C:\MinGW\bin\ar.exe cr CMakeFiles\fileLab.dir/objects.a @CMakeFiles\fileLab.dir\objects1.rsp
+C:\MinGW\bin\g++.exe -g -Wl,--whole-archive CMakeFiles\fileLab.dir/objects.a -Wl,--no-whole-archive -o fileLab.exe -Wl,--out-implib,libfileLab.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\fileLab.dir\linklibs.rsp
