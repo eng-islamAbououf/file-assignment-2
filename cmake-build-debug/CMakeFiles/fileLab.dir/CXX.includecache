@@ -9,8 +9,8 @@
 D:/work/fileLab/main.cpp
 iostream
 -
-fstream
+iomanip
 -
-list
+fstream
 -
 
