@@ -1,8 +1,11 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <string>
 using namespace std ;
 
+const string META_DATA = "metaData.txt" ;
+char *fileName = new char [100];
 int RRN = 5 ;
 int blockIndex = 0 ;
 
@@ -14,13 +17,10 @@ struct node {
     int key ;
     int value ;
 
-    void print (){
-        cout << key << " " << value << endl ;
-    }
-    bool operator >(node & n){
+    bool operator >(node & n) const{
         return key>n.key ;
     }
-    bool operator <(node & n){
+    bool operator <(node & n) const{
         return key<n.key ;
     }
 };
@@ -35,11 +35,16 @@ public:
     Block(int size ){
         size_ = size ;
         arr=new node[size] ;
+        next = -1 ;
+        maxKey = -1 ;
     }
 
-    Block() {}
+    Block() {
+        next = -1 ;
+        maxKey = -1 ;
+    }
 
-    void sort(){
+    void sort() const{
         node key ;
         int i, j;
         for (i = 1; i <= index; i++)
@@ -163,9 +168,15 @@ int GetBlockIndex (char *cIndexFile, int iToken){
 }
 int getEmpty(char *file);
 
+void addToMetaData(char *name, int blocks, int records);
+
+int indexOfFile(char *name);
+
+void getFile(int i);
+
 bool CreateRecordFile(char *cIndexFile, int m, int n){
     fstream file ;
-    file.open(cIndexFile,ios::binary | ios::in | ios::out) ;
+    file.open(cIndexFile,ios::binary | ios::out) ;
     if (file){
         file << setw(RRN) << firstNonEmpty << endl ;
         file << setw(RRN) << firstEmptyBlock << endl ;
@@ -315,6 +326,21 @@ int GetVal(char *cIndexFile, int iBlock, int iRecord){
     file.close() ;
     return x ;
 }
+bool isAbelToMerge(char *cIndexFile,int index) {
+    if (index==-1)
+        return false ;
+    fstream file;
+    bool flag = false ;
+    file.open(cIndexFile, ios::binary | ios::in | ios::out);
+    int x ;
+    file.seekg((index*numOfRecords*RRN*2)+12+(index*2) + RRN,ios::beg) ;
+    file.seekg((numOfRecords-1)/2 * RRN,ios::cur) ;
+    file>> x ;
+    if (x==-1)
+        flag = true ;
+    file.close() ;
+    return flag ;
+}
 void DeleteKey (char *cIndexFile, int iToken) {
     fstream file;
     file.open(cIndexFile, ios::binary | ios::in | ios::out);
@@ -329,6 +355,38 @@ void DeleteKey (char *cIndexFile, int iToken) {
         if (cur.index+1 < cur.size_ / 2) {
             // merge
             cout << "Now We need Merge\n" ;
+
+            if (isAbelToMerge(cIndexFile,blockIndex-1)){
+                blockIndex -- ;
+                Block bre = loadBlock(cIndexFile);
+                for (int i = 0; i < (numOfRecords-1)/2 - 1; ++i) {
+                    bre.insert(cur.arr[i].key,cur.arr[i].value);
+                    cur.arr[i].key = -1 ;cur.arr[i].value = -1 ;
+                    cur.index -- ;
+                }
+                bre.next = cur.next ;
+                bre.updateMax() ;
+                cur.maxKey = -1 ;
+                cur.next = -1 ;
+                file.seekg((blockIndex * numOfRecords * RRN * 2) + 12 + (blockIndex * 2));
+                file << bre ;
+                blockIndex ++ ;
+            }else if (isAbelToMerge(cIndexFile , blockIndex+1)){
+                blockIndex ++ ;
+                Block bre = loadBlock(cIndexFile);
+                for (int i = 0; i < (numOfRecords-1)/2 - 1; ++i) {
+                    cur.insert(bre.arr[i].key,bre.arr[i].value);
+                    bre.arr[i].key = -1 ;bre.arr[i].value = -1 ;
+                }
+                cur.next = bre.next ;
+                cur.maxKey = bre .maxKey;
+                bre.maxKey = -1 ;
+                bre.next = -1 ;
+                file.seekg((blockIndex * numOfRecords * RRN * 2) + 12 + (blockIndex * 2));
+                file << bre ;
+                blockIndex -- ;
+            }else
+                cout << "Unable to Merge \n" ;
         }
     } else {
         cout << "Key : " << iToken << " Not Found !\n";
@@ -336,30 +394,129 @@ void DeleteKey (char *cIndexFile, int iToken) {
     file.seekg((blockIndex * numOfRecords * RRN * 2) + 12 + (blockIndex * 2));
     file << cur ;
     file.close() ;
+    updateIndexes(cIndexFile);
 }
 
 int main(){
 
-//    char * fileName = "islam.txt" ;
-//
-//    firstEmptyBlock  = 1 ;
-//    firstNonEmpty = -1 ;
-//    numOfBlocks = 4 ;
-//    numOfRecords = 5 ;
-//    CreateRecordFile(fileName , numOfBlocks , numOfRecords) ;
-//    cout << InsertVal(fileName , 5 ,1 ) << endl ;
-//    cout << InsertVal(fileName ,  18, 4)<< endl ;
-//    cout << InsertVal(fileName , 27 ,5 ) << endl;
-//    cout << InsertVal(fileName , 88 ,2 ) << endl;
-//    cout << InsertVal(fileName , 20 ,3 ) << endl;
-//    cout << InsertVal(fileName , 4 ,8) ;
-//    InsertVal(fileName , 11,9) ;
-//    InsertVal(fileName , 15 ,7) ;
-//    DeleteKey( fileName,7) ;
-//    DeleteKey( fileName,2) ;
-//    DeleteKey( fileName,4) ;
-//
-//    cout << endl << GetVal(fileName,3,2) << endl ;
+    int choice = 0 ;
+    do {
+        cout << "************ Welcome TO my Sequence Set main *****************\n"
+            << "Choose Operation  : " << endl
+            << "1- Open Existing Sequence Set " << endl
+            << "2- Create New Sequence Set " << endl
+            << "3- Insert New Record " << endl
+            << "4- Delete Record " << endl
+            << "5- Search about Record " << endl
+            << "6- Exit " << endl ;
+        cin >> choice ;
+        if (choice==1){
+            cout << "Enter Data File name : " << endl ;
+            cin >> fileName ;
+            int i = indexOfFile(fileName) ;
+            if (i!=-1){
+                getFile(i) ;
+                cout << "Switched To This Sequence Set" << endl ;
+            }else
+                cout << "File With this Name Not Found " << endl ;
+        }else if (choice==2){
+            cout << "Enter Data File name : " << endl ;
+            cin >> fileName ;
+            int i = indexOfFile(fileName) ;
+            if (i!=-1){
+                cout << "This Sequence Set Already Exists" << endl ;
+                continue;
+            }
+            firstEmptyBlock  = 1 ;
+            firstNonEmpty = -1 ;
+            cout << "Enter Number Of Blocks : " << endl ;
+            cin >> numOfBlocks ;
+            cout << "Enter Number Of Record in one Block : " << endl ;
+            cin >> numOfRecords ;
+            if (CreateRecordFile(fileName,numOfBlocks,numOfRecords)){
+                addToMetaData(fileName , numOfBlocks , numOfRecords) ;
+                cout << "New Sequence Set Created Successfully With Name : "<< fileName << endl ;
+                cout << "Switched To This Sequence Set" << endl ;
+            }else
+                cout << "Sorry Can't Create This Set ''( " << endl ;
+        }else if (choice==3){
+            int key , value ;
+            cout << "Enter Record Key : "<<endl ;
+            cin >> key ;
+            cout << "Enter Record Value : "<<endl ;
+            cin >> value ;
+            if (InsertVal(fileName,value,key))
+                cout << "Record Inserted Successfully " << endl ;
+            else
+                cout << "Record Can't Insert" << endl ;
+        }else if (choice==4){
+            int key  ;
+            cout << "Enter Record Key : "<<endl ;
+            cin >> key ;
+            DeleteKey(fileName,key) ;
+        }else if (choice==5){
+            int key  ;
+            cout << "Enter Record Key : "<<endl ;
+            cin >> key ;
+            int i = GetBlockIndex(fileName , key) ;
+            int ii = GetRecordIndex(fileName , key) ;
+            if (ii==-1)
+                cout << "Record Not Found!!" << endl ;
+            else {
+                cout << "Record Key : " << key << endl ;
+                cout << "Record Value : " << GetVal(fileName,i,ii) << endl ;
+            }
+        }else if (choice==6){
+            break;
+        }
+    } while (true) ;
+}
 
+void getFile(int i) {
+    fstream file ;
+    file.open(META_DATA , ios::out | ios::in | ios::binary) ;
+    file.seekg(i) ;
+    file >> fileName ;
+    file >> numOfBlocks >> numOfRecords ;
+    file.close() ;
+}
 
+int indexOfFile(char *name) {
+    int index = -1  , byteOff;
+    int size ;
+    string temp ;
+    bool isFound = false ;
+    fstream file ;
+    file.open(META_DATA , ios::out | ios::in | ios::binary) ;
+    file >> size ;
+    file.seekg( 1, ios::cur) ;
+    for (int i = 0; i < size; ++i) {
+        byteOff = file.tellg() ;
+        file >> temp ;
+        if (temp==name){
+            isFound = true ;
+            break;
+        }
+        file.seekg( 11, ios::cur) ;
+    }
+    if (isFound)
+        index = byteOff ;
+    file.close() ;
+    return index;
+}
+
+void addToMetaData(char *name, int blocks, int records) {
+    fstream file ;
+    file.open(META_DATA , ios::out | ios::in | ios::binary) ;
+    int num  ;
+    file>>num ;
+    file.seekg( 0, ios::end) ;
+    file << name << " " ;
+    file << setw(RRN) << blocks ;
+    file << setw(RRN) << records ;
+    file << endl ;
+    num++ ;
+    file.seekg( 0, ios::beg) ;
+    file << num ;
+    file.close() ;
 }
