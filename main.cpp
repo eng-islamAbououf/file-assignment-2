@@ -174,6 +174,8 @@ int indexOfFile(char *name);
 
 void getFile(int i);
 
+int getNonEmpty(char *file);
+
 bool CreateRecordFile(char *cIndexFile, int m, int n){
     fstream file ;
     file.open(cIndexFile,ios::binary | ios::out) ;
@@ -262,12 +264,22 @@ int InsertVal(char *cIndexFile, int iToken, int iKey){
 
 void updateIndexes(char *cIndexFile) {
     firstEmptyBlock = getEmpty(cIndexFile) ;
+    firstNonEmpty = getNonEmpty(cIndexFile);
     fstream file ;
     file.open(cIndexFile,ios::binary | ios::in | ios::out) ;
     file.seekg(0) ;
     file << setw(RRN) << firstNonEmpty << endl ;
     file << setw(RRN) << firstEmptyBlock << endl ;
     file.close() ;
+}
+
+int getNonEmpty(char *cIndexFile) {
+    fstream file ;
+    file.open(cIndexFile,ios::binary | ios::in | ios::out) ;
+    int x ;
+    file>>x ;
+    file.close() ;
+    return x;
 }
 
 int getEmpty(char *cIndexFile) {
@@ -400,7 +412,6 @@ void DeleteKey (char *cIndexFile, int iToken) {
 int main(){
 
     int choice = 0 ;
-    fileName = "data.txt" ;
     do {
         cout << "************ Welcome TO my Sequence Set main *****************\n"
             << "Choose Operation  : " << endl
@@ -408,8 +419,9 @@ int main(){
             << "2- Create New Sequence Set " << endl
             << "3- Insert New Record " << endl
             << "4- Delete Record " << endl
-            << "5- Search about Record " << endl
-            << "6- Exit " << endl ;
+            << "5- Search about Record by Key" << endl
+            << "6- Print First Empty Block Number" << endl
+            << "7- Exit " << endl ;
         cin >> choice ;
         if (choice==1){
             cout << "Enter Data File name : " << endl ;
@@ -468,6 +480,12 @@ int main(){
                 cout << "Record Value : " << GetVal(fileName,i,ii) << endl ;
             }
         }else if (choice==6){
+            int f = FirstEmptyBlock(fileName) ;
+            if (f==-1)
+                cout << "All blocks is Full" << endl ;
+            else
+                cout <<"First Empty Block is : " << f << endl ;
+        }else if (choice==7){
             break;
         }
     } while (true) ;
