@@ -400,6 +400,7 @@ void DeleteKey (char *cIndexFile, int iToken) {
 int main(){
 
     int choice = 0 ;
+    fileName = "data.txt" ;
     do {
         cout << "************ Welcome TO my Sequence Set main *****************\n"
             << "Choose Operation  : " << endl
