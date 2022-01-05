@@ -13,28 +13,28 @@ int firstEmptyBlock ;
 int firstNonEmpty;
 int numOfBlocks  ;
 int numOfRecords  ;
-struct node {
+struct Record {
     int key ;
     int value ;
 
-    bool operator >(node & n) const{
+    bool operator >(Record & n) const{
         return key>n.key ;
     }
-    bool operator <(node & n) const{
+    bool operator <(Record & n) const{
         return key<n.key ;
     }
 };
 
 class Block{
 public:
-    node* arr ;
+    Record* arr ;
     int size_ ;
     int index = 0 ;
     int maxKey  ;
     int next ;
     Block(int size ){
         size_ = size ;
-        arr=new node[size] ;
+        arr=new Record[size] ;
         next = -1 ;
         maxKey = -1 ;
     }
@@ -45,7 +45,7 @@ public:
     }
 
     void sort() const{
-        node key ;
+        Record key ;
         int i, j;
         for (i = 1; i <= index; i++)
         {
