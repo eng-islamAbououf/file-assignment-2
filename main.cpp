@@ -6,7 +6,7 @@ using namespace std ;
 
 const string META_DATA = "metaData.txt" ;
 char *fileName = new char [100];
-int RRN = 5 ;
+int RRN = 7 ;
 int blockIndex = 0 ;
 
 int firstEmptyBlock ;
@@ -132,7 +132,7 @@ int search(char *cIndexFile, int iBlock, int key){
         return -1 ;
     fstream file;
     file.open(cIndexFile, ios::binary | ios::in | ios::out);
-    file.seekg((iBlock * numOfRecords * RRN * 2) + 12 + (iBlock * 2) + RRN) ;
+    file.seekg((iBlock * numOfRecords * RRN * 2) + ((RRN*2)+2) + (iBlock * 2) + RRN) ;
     int counter = 0 ,tmp ;
     while (counter<numOfRecords-1){
         file>>tmp ;
@@ -152,7 +152,7 @@ int GetBlockIndex (char *cIndexFile, int iToken){
     int index = -1, max, next;
     do {
         index++;
-        file.seekg((index * numOfRecords * RRN * 2) + 12 + (index * 2));
+        file.seekg((index * numOfRecords * RRN * 2) + ((RRN*2)+2) + (index * 2));
         file >> next;
         if (next==-1)
             break;
@@ -160,6 +160,7 @@ int GetBlockIndex (char *cIndexFile, int iToken){
         file >> max;
         if (max>=iToken)
             break;
+        index = next-2 ;
     } while (true);
     file.close() ;
     if (search(cIndexFile,index , iToken)!=-1)
@@ -206,7 +207,7 @@ bool CreateRecordFile(char *cIndexFile, int m, int n){
 Block loadBlock(char* fileName){
     fstream file ;
     file.open(fileName , ios::binary | ios::out | ios::in) ;
-    file.seekg((blockIndex*numOfRecords*RRN*2)+12+(blockIndex*2),ios::beg) ;
+    file.seekg((blockIndex*numOfRecords*RRN*2)+((RRN*2)+2)+(blockIndex*2),ios::beg) ;
     Block cur (numOfRecords-1);
     file >> cur.next ;
     for (int i = 0; i < numOfRecords-1; ++i) {
@@ -225,11 +226,13 @@ int InsertVal(char *cIndexFile, int iToken, int iKey){
 
     fstream file ;
     file.open(cIndexFile,ios::binary | ios::in | ios::out) ;
+    firstNonEmpty = getNonEmpty(cIndexFile) ;
+    firstEmptyBlock = getEmpty(cIndexFile) ;
     blockIndex=0;
     Block cur = loadBlock(cIndexFile) ;
     Block next ;
     while (cur.next!=-1){
-        blockIndex++ ;
+        blockIndex=cur.next-1 ;
         next = loadBlock(cIndexFile) ;
         if (iKey < next.arr[0].key && cur.index!=cur.size_)
             break ;
@@ -249,13 +252,13 @@ int InsertVal(char *cIndexFile, int iToken, int iKey){
             cur.insert(iKey, iToken);
         else
             next.insert(iKey, iToken);
-        file.seekg((blockIndex * numOfRecords * RRN * 2) + 12 + (blockIndex * 2), ios::beg);
+        file.seekg((blockIndex * numOfRecords * RRN * 2) + ((RRN*2)+2) + (blockIndex * 2), ios::beg);
         file << next;
         blockIndex--;
     }
     else
         firstNonEmpty = 1 ;
-    file.seekg((blockIndex*numOfRecords*RRN*2)+12+(blockIndex*2),ios::beg) ;
+    file.seekg((blockIndex*numOfRecords*RRN*2)+((RRN*2)+2)+(blockIndex*2),ios::beg) ;
     file << cur ;
     updateIndexes(cIndexFile);
     file.close() ;
@@ -264,7 +267,6 @@ int InsertVal(char *cIndexFile, int iToken, int iKey){
 
 void updateIndexes(char *cIndexFile) {
     firstEmptyBlock = getEmpty(cIndexFile) ;
-    firstNonEmpty = getNonEmpty(cIndexFile);
     fstream file ;
     file.open(cIndexFile,ios::binary | ios::in | ios::out) ;
     file.seekg(0) ;
@@ -289,7 +291,7 @@ int getEmpty(char *cIndexFile) {
     file.open(cIndexFile,ios::binary | ios::in | ios::out) ;
 
     for (int i = 0; i < numOfBlocks-1; ++i) {
-        file.seekg((i*numOfRecords*RRN*2)+12+(i*2)+RRN,ios::beg) ;
+        file.seekg((i*numOfRecords*RRN*2)+((RRN*2)+2)+(i*2)+RRN,ios::beg) ;
         file >> t ;
         if (t==-1){
             index = i+1 ;
@@ -321,7 +323,7 @@ int GetKey(char *cIndexFile, int iBlock, int iRecord){
     iBlock-- ;
     int x ;
     file.open(cIndexFile, ios::binary | ios::in | ios::out);
-    file.seekg((iBlock * numOfRecords * RRN * 2) + 12 + (iBlock * 2)) ;
+    file.seekg((iBlock * numOfRecords * RRN * 2) + ((RRN*2)+2) + (iBlock * 2)) ;
     file.seekg(iRecord*RRN,ios::cur) ;
     file>>x ;
     file.close() ;
@@ -332,7 +334,7 @@ int GetVal(char *cIndexFile, int iBlock, int iRecord){
     iBlock-- ;
     int x ;
     file.open(cIndexFile, ios::binary | ios::in | ios::out);
-    file.seekg((iBlock * numOfRecords * RRN * 2) + 12 + (iBlock * 2)) ;
+    file.seekg((iBlock * numOfRecords * RRN * 2) + ((RRN*2)+2) + (iBlock * 2)) ;
     file.seekg((iRecord*RRN)+ (numOfRecords*RRN)+iRecord,ios::cur) ;
     file>>x ;
     file.close() ;
@@ -345,7 +347,7 @@ bool isAbelToMerge(char *cIndexFile,int index) {
     bool flag = false ;
     file.open(cIndexFile, ios::binary | ios::in | ios::out);
     int x ;
-    file.seekg((index*numOfRecords*RRN*2)+12+(index*2) + RRN,ios::beg) ;
+    file.seekg((index*numOfRecords*RRN*2)+((RRN*2)+2)+(index*2) + RRN,ios::beg) ;
     file.seekg((numOfRecords-1)/2 * RRN,ios::cur) ;
     file>> x ;
     if (x==-1)
@@ -380,7 +382,7 @@ void DeleteKey (char *cIndexFile, int iToken) {
                 bre.updateMax() ;
                 cur.maxKey = -1 ;
                 cur.next = -1 ;
-                file.seekg((blockIndex * numOfRecords * RRN * 2) + 12 + (blockIndex * 2));
+                file.seekg((blockIndex * numOfRecords * RRN * 2) + ((RRN*2)+2) + (blockIndex * 2));
                 file << bre ;
                 blockIndex ++ ;
             }else if (isAbelToMerge(cIndexFile , blockIndex+1)){
@@ -394,7 +396,7 @@ void DeleteKey (char *cIndexFile, int iToken) {
                 cur.maxKey = bre .maxKey;
                 bre.maxKey = -1 ;
                 bre.next = -1 ;
-                file.seekg((blockIndex * numOfRecords * RRN * 2) + 12 + (blockIndex * 2));
+                file.seekg((blockIndex * numOfRecords * RRN * 2) + ((RRN*2)+2) + (blockIndex * 2));
                 file << bre ;
                 blockIndex -- ;
             }else
@@ -403,7 +405,7 @@ void DeleteKey (char *cIndexFile, int iToken) {
     } else {
         cout << "Key : " << iToken << " Not Found !\n";
     }
-    file.seekg((blockIndex * numOfRecords * RRN * 2) + 12 + (blockIndex * 2));
+    file.seekg((blockIndex * numOfRecords * RRN * 2) + ((RRN*2)+2) + (blockIndex * 2));
     file << cur ;
     file.close() ;
     updateIndexes(cIndexFile);
@@ -412,34 +414,32 @@ void DeleteKey (char *cIndexFile, int iToken) {
 int main(){
 
     int choice = 0 ;
-    do {
-        cout << "************ Welcome TO my Sequence Set main *****************\n"
-            << "Choose Operation  : " << endl
-            << "1- Open Existing Sequence Set " << endl
-            << "2- Create New Sequence Set " << endl
-            << "3- Insert New Record " << endl
-            << "4- Delete Record " << endl
-            << "5- Search about Record by Key" << endl
-            << "6- Print First Empty Block Number" << endl
-            << "7- Exit " << endl ;
-        cin >> choice ;
-        if (choice==1){
-            cout << "Enter Data File name : " << endl ;
-            cin >> fileName ;
-            int i = indexOfFile(fileName) ;
-            if (i!=-1){
-                getFile(i) ;
-                cout << "Switched To This Sequence Set" << endl ;
-            }else
-                cout << "File With this Name Not Found " << endl ;
-        }else if (choice==2){
-            cout << "Enter Data File name : " << endl ;
-            cin >> fileName ;
-            int i = indexOfFile(fileName) ;
-            if (i!=-1){
-                cout << "This Sequence Set Already Exists" << endl ;
-                continue;
-            }
+
+    cout << "1- Open Existing Sequence Set " << endl
+         << "2- Create New Sequence Set " << endl ;
+    cin >> choice ;
+
+    if (choice==1){
+        cout << "Enter Data File name : " << endl ;
+        cin >> fileName ;
+        int i = indexOfFile(fileName) ;
+        if (i!=-1){
+            getFile(i) ;
+            cout << "Switched To This Sequence Set" << endl ;
+            firstNonEmpty = getNonEmpty(fileName) ;
+            firstEmptyBlock = getEmpty(fileName) ;
+        }else{
+            cout << "File With this Name Not Found " << endl ;
+            exit(0) ;
+        }
+    }else if (choice==2){
+        cout << "Enter Data File name : " << endl ;
+        cin >> fileName ;
+        int i = indexOfFile(fileName) ;
+        if (i!=-1){
+            cout << "This Sequence Set Already Exists" << endl ;
+        }
+        else {
             firstEmptyBlock  = 1 ;
             firstNonEmpty = -1 ;
             cout << "Enter Number Of Blocks : " << endl ;
@@ -452,7 +452,20 @@ int main(){
                 cout << "Switched To This Sequence Set" << endl ;
             }else
                 cout << "Sorry Can't Create This Set ''( " << endl ;
-        }else if (choice==3){
+        }
+    } else
+        exit(0) ;
+
+    do {
+        cout << "************ Welcome TO my Sequence Set main *****************\n"
+            << "Choose Operation  : " << endl
+            << "1- Insert New Record " << endl
+            << "2- Delete Record " << endl
+            << "3- Search about Record by Key" << endl
+            << "4- Print First Empty Block Number" << endl
+            << "5- Exit " << endl ;
+        cin >> choice ;
+        if (choice==1){
             int key , value ;
             cout << "Enter Record Key : "<<endl ;
             cin >> key ;
@@ -462,12 +475,12 @@ int main(){
                 cout << "Record Inserted Successfully " << endl ;
             else
                 cout << "Record Can't Insert" << endl ;
-        }else if (choice==4){
+        }else if (choice==2){
             int key  ;
             cout << "Enter Record Key : "<<endl ;
             cin >> key ;
             DeleteKey(fileName,key) ;
-        }else if (choice==5){
+        }else if (choice==3){
             int key  ;
             cout << "Enter Record Key : "<<endl ;
             cin >> key ;
@@ -479,13 +492,13 @@ int main(){
                 cout << "Record Key : " << key << endl ;
                 cout << "Record Value : " << GetVal(fileName,i,ii) << endl ;
             }
-        }else if (choice==6){
+        }else if (choice==4){
             int f = FirstEmptyBlock(fileName) ;
             if (f==-1)
                 cout << "All blocks is Full" << endl ;
             else
                 cout <<"First Empty Block is : " << f << endl ;
-        }else if (choice==7){
+        }else if (choice==5){
             break;
         }
     } while (true) ;

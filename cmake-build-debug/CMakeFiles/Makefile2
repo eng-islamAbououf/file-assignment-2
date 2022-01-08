@@ -62,10 +62,10 @@ RM = "C:\Program Files\JetBrains\CLion 2021.1.1\bin\cmake\win\bin\cmake.exe" -E 
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = D:\work\fileLab
+CMAKE_SOURCE_DIR = D:\work\fileAssignment2
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = D:\work\fileLab\cmake-build-debug
+CMAKE_BINARY_DIR = D:\work\fileAssignment2\cmake-build-debug
 
 #=============================================================================
 # Directory level rules for the build root directory
@@ -92,14 +92,14 @@ clean: CMakeFiles/fileLab.dir/clean
 CMakeFiles/fileLab.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\fileLab.dir\build.make CMakeFiles/fileLab.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\fileLab.dir\build.make CMakeFiles/fileLab.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=D:\work\fileLab\cmake-build-debug\CMakeFiles --progress-num=1,2 "Built target fileLab"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=D:\work\fileAssignment2\cmake-build-debug\CMakeFiles --progress-num=1,2 "Built target fileLab"
 .PHONY : CMakeFiles/fileLab.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/fileLab.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start D:\work\fileLab\cmake-build-debug\CMakeFiles 2
+	$(CMAKE_COMMAND) -E cmake_progress_start D:\work\fileAssignment2\cmake-build-debug\CMakeFiles 2
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 CMakeFiles/fileLab.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start D:\work\fileLab\cmake-build-debug\CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start D:\work\fileAssignment2\cmake-build-debug\CMakeFiles 0
 .PHONY : CMakeFiles/fileLab.dir/rule
 
 # Convenience name for target.
